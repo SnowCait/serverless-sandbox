@@ -3,7 +3,10 @@ frameworkVersion: '3'
 
 provider:
   name: aws
+  region: ap-northeast-1
   runtime: nodejs18.x
+  memorySize: 128
+  architecture: arm64
 
 functions:
   function1:
