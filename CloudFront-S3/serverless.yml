@@ -1,5 +1,13 @@
-service: CloudFront-S3-Sandbox
+service: cloudfront-s3-sandbox
 frameworkVersion: '3'
+
+plugins:
+  - serverless-s3-sync
+
+custom:
+  s3Sync:
+    - bucketName: ${self:service}-${sls:stage}
+      localDir: public
 
 provider:
   name: aws
@@ -11,3 +19,10 @@ provider:
 functions:
   function1:
     handler: index.handler
+
+resources:
+  Resources:
+    S3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-${sls:stage}
