@@ -26,3 +26,55 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:service}-${sls:stage}
+    S3BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: S3Bucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Action:
+                - s3:GetObject
+              Effect: Allow
+              Resource:
+                Fn::Sub: ${S3Bucket.Arn}/*
+              Principal:
+                Service:
+                  - cloudfront.amazonaws.com
+              Condition:
+                StringEquals:
+                  AWS:SourceArn:
+                    Fn::Sub: arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
+    CloudFrontOriginAccessControl:
+      Type: AWS::CloudFront::OriginAccessControl
+      Properties:
+        OriginAccessControlConfig:
+          Name: OriginAccessControl
+          OriginAccessControlOriginType: s3
+          SigningBehavior: always
+          SigningProtocol: sigv4
+    CloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Enabled: true
+          Origins:
+            - Id: S3Origin
+              DomainName:
+                Fn::Join:
+                  - '.'
+                  - - Ref: S3Bucket
+                    - s3
+                    - Ref: AWS::Region
+                    - Ref: AWS::URLSuffix
+              OriginAccessControlId:
+                Ref: CloudFrontOriginAccessControl
+              S3OriginConfig: # required
+                OriginAccessIdentity: ''
+          DefaultCacheBehavior:
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: https-only
+            ForwardedValues:
+              QueryString: false
+          DefaultRootObject: index.html
